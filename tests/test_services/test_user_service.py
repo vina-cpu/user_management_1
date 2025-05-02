@@ -161,3 +161,40 @@ async def test_unlock_user_account(db_session, locked_user):
     assert unlocked, "The account should be unlocked"
     refreshed_user = await UserService.get_by_id(db_session, locked_user.id)
     assert not refreshed_user.is_locked, "The user should no longer be locked"
+
+# Test creating two users and verifying their emails were verified and their roles did not change
+async def test_create_two_users_with_valid_data_and_check_emails(db_session, email_service):
+    user_data = {
+        "nickname": generate_nickname(),
+        "email": "valid_user@example.com",
+        "password": "ValidPassword123!",
+        "role": UserRole.ADMIN
+    }
+    user_data_2 = {
+        "nickname": generate_nickname(),
+        "email": "valid_user_2@example.com",
+        "password": "AnotherValidPassword123!",
+        "role": UserRole.ANONYMOUS
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    user2 = await UserService.create(db_session, user_data_2, email_service)
+    assert user is not None
+    assert user2 is not None
+    assert user.email == user_data["email"]
+    assert user2.email == user_data_2["email"]
+    assert user.role == user_data["role"]
+    assert user2.role == user_data_2["role"]
+    
+    token = "valid_token_example_1"  # This should be set in your user setup if it depends on a real token
+    user.verification_token = token  # Simulating setting the token in the database
+    await db_session.commit()
+    result = await UserService.verify_email_with_token(db_session, user.id, token)
+    assert result is True
+    assert user.role == user_data["role"]
+    
+    token = "valid_token_example_2"
+    user2.verification_token = token
+    await db_session.commit()
+    result = await UserService.verify_email_with_token(db_session, user2.id, token)
+    assert result is True
+    assert user2.role == UserRole.AUTHENTICATED
