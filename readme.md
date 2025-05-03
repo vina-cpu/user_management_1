@@ -1,4 +1,6 @@
 
+# Please grade this on/after May 9th
+## I want to use the extension given in Discord but also do not want to turn this in late and risk having a zero :)
 
 # The User Management System Final Project: Your Epic Coding Adventure Awaits! 🎉✨🔥
 
