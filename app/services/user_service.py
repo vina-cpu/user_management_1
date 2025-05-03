@@ -57,23 +57,19 @@ class UserService:
             if existing_user:
                 logger.error("User with given email already exists.")
                 return None
-            if 'nickname' in user_data:
-                existing_nickname = await cls.get_by_nickname(session, validated_data['nickname'])
-                if existing_nickname:
-                    logger.error("User with given nickname already exists.")
-                    return None
             validated_data['hashed_password'] = hash_password(validated_data.pop('password'))
             new_user = User(**validated_data)
             new_nickname = generate_nickname()
             while await cls.get_by_nickname(session, new_nickname): #nicknames have to be unique
                 new_nickname = generate_nickname()
+            new_user.nickname = new_nickname
             if 'nickname' in user_data: # adding functionality for nicknames adding
                 existing_nickname = await cls.get_by_nickname(session, validated_data['nickname'])
                 if existing_nickname:
                     logger.info("User with given nickname already exists. A new nickname will be provided instead.")
                 else:
                     new_nickname = validated_data['nickname']
-            new_user.nickname = new_nickname
+                    new_user.nickname = new_nickname
             logger.info(f"User Role: {new_user.role}")
             user_count = await cls.count(session)
             new_user.role = UserRole.ADMIN if user_count == 0 else UserRole.ANONYMOUS            
