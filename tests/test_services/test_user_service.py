@@ -30,6 +30,39 @@ async def test_create_user_with_invalid_data(db_session, email_service):
     user = await UserService.create(db_session, user_data, email_service)
     assert user is None
 
+# Test creating a user with a unique nickname
+async def test_create_user_with_unique_nickname(db_session, email_service):
+    user_data = {
+        "nickname": "blacktip_reef_shark",
+        "email": "iamashark@shark.org",
+        "password": "yumfish3000",
+        "role": UserRole.ANONYMOUS.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.nickname == user_data["nickname"]
+
+# Test creating a user with a non-unique
+async def test_create_user_with_same_nickname(db_session, email_service):
+    user_data = {
+        "nickname": "lemon_shark",
+        "email": "iamashark@shark.org",
+        "password": "yumfish3000",
+        "role": UserRole.ANONYMOUS.name
+    }
+    user_data2 = {
+        "nickname": "lemon_shark",
+        "email": "iamfakeshark@pufferfish.net",
+        "password": "evildolphin5000",
+        "role": UserRole.ANONYMOUS.name
+    }
+    user = await UserService.create(db_session, user_data, email_service)
+    assert user is not None
+    assert user.nickname == user_data["nickname"]
+    user2 = await UserService.create(db_session, user_data2, email_service)
+    assert user2 is not None
+    assert user2.nickname != user_data2["nickname"] #because nickname already exists
+
 # Test fetching a user by ID when the user exists
 async def test_get_by_id_user_exists(db_session, user):
     retrieved_user = await UserService.get_by_id(db_session, user.id)
