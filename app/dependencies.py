@@ -1,13 +1,16 @@
+from uuid import UUID
 from builtins import Exception, dict, str
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.database import Database
 from app.utils.template_manager import TemplateManager
 from app.services.email_service import EmailService
 from app.services.jwt_service import decode_token
 from settings.config import Settings
 from fastapi import Depends
+from app.models.user_model import User
 
 def get_settings() -> Settings:
     """Return application settings."""
@@ -29,20 +32,22 @@ async def get_db() -> AsyncSession:
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=401,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
+    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
+    
     payload = decode_token(token)
     if payload is None:
         raise credentials_exception
-    user_id: str = payload.get("sub")
-    user_role: str = payload.get("role")
-    if user_id is None or user_role is None:
+    
+    user_email: str = payload.get("sub")
+    if user_email is None:
         raise credentials_exception
-    return {"user_id": user_id, "role": user_role}
+    
+    result = await db.execute(select(User).where(User.email == user_email))
+    user = result.scalar_one_or_none()
+    if user is None:
+        raise credentials_exception 
+    return User
 
 def require_role(role: str):
     def role_checker(current_user: dict = Depends(get_current_user)):
