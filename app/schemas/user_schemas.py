@@ -69,6 +69,9 @@ class UserSelfUpdate(BaseModel): # similar to UserUpdate, but instead of using a
         if not any(values.values()):
             raise ValueError("At least one field must be provided for update")
         return values
+    
+    class Config:
+        extra = "forbid"
 
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
