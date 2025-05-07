@@ -32,7 +32,8 @@ async def get_db() -> AsyncSession:
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
+async def get_current_user_update_me(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)) -> User:
+    print("oauth2 scheme gave me token", token)
     credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Could not validate credentials", headers={"WWW-Authenticate": "Bearer"})
     
     payload = decode_token(token)
@@ -48,6 +49,21 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     if user is None:
         raise credentials_exception 
     return user
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    credentials_exception = HTTPException(
+        status_code=401,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    payload = decode_token(token)
+    if payload is None:
+        raise credentials_exception
+    user_id: str = payload.get("sub")
+    user_role: str = payload.get("role")
+    if user_id is None or user_role is None:
+        raise credentials_exception
+    return {"user_id": user_id, "role": user_role}
 
 def require_role(role: str):
     def role_checker(current_user: dict = Depends(get_current_user)):

@@ -51,6 +51,38 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
     assert response.status_code == 200
     assert response.json()["email"] == updated_data["email"]
 
+@pytest.mark.asyncio
+async def test_update_me_access_denied(async_client):
+    updated_data = {"bio": "this shouldn't work"}
+    response = await async_client.put("/users/me", json=updated_data)
+    assert response.status_code == 401
+
+@pytest.mark.asyncio
+async def test_update_me_everything(async_client, verified_user, verified_user_token):
+    headers = {"Authorization": f"Bearer {verified_user_token}"}
+    # Define user data for the test
+    user_data = {
+        "email": "chimkin@chickennuggets.org",
+        "nickname": "iamchicken3",
+        "first_name": "chimkin",
+        "last_name": "nuggets",
+        "bio": "hi there i am a chicken nugget",
+        "profile_picture_url": "https://chicken.org/chimkin.jpg",
+        "linkedin_profile_url": "https://linkedin.com/in/chimkinnuggets",
+        "github_profile_url": "https://github.com/chimkinnuggets"
+    }
+    # Send a POST request to create a user
+    print("sending auth header")
+    response = await async_client.put("/users/me", json=user_data, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == user_data["email"]  
+    assert response.json()["nickname"] == user_data["nickname"]
+    assert response.json()["first_name"] == user_data["first_name"]
+    assert response.json()["last_name"] == user_data["last_name"]
+    assert response.json()["bio"] == user_data["bio"]
+    assert response.json()["profile_picture_url"] == user_data["profile_picture_url"]
+    assert response.json()["linkedin_profile_url"] == user_data["linkedin_profile_url"]
+    assert response.json()["github_profile_url"] == user_data["github_profile_url"]
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):

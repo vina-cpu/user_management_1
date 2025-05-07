@@ -24,7 +24,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.dependencies import get_current_user, get_db, get_email_service, require_role
+from app.dependencies import get_current_user, get_db, get_email_service, require_role, get_current_user_update_me
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
 from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, UserSelfUpdate
@@ -78,7 +78,7 @@ async def get_user(user_id: UUID, request: Request, db: AsyncSession = Depends(g
 # This approach not only ensures that the API is secure and efficient but also promotes a better client
 # experience by adhering to REST principles and providing self-discoverable operations.
 @router.put("/users/me", response_model=UserResponse, name="update_me", tags=["User Settings (Requires Login)"])
-async def update_me(self_update: UserSelfUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(get_current_user)):
+async def update_me(self_update: UserSelfUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(get_current_user_update_me)):
     """
     Update user information.
 
