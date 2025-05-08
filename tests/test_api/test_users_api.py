@@ -81,12 +81,19 @@ async def test_update_me_everything(async_client, verified_user, verified_user_t
     assert response.json()["bio"] == user_data["bio"]
     assert response.json()["profile_picture_url"] == user_data["profile_picture_url"]
     assert response.json()["linkedin_profile_url"] == user_data["linkedin_profile_url"]
-    assert response.json()["github_profile_url"] == user_data["github_profile_url"]
+    assert response.json()["github_profile_url"] == user_data["github_profile_url"]      
 
 @pytest.mark.asyncio
 async def test_update_password_access_denied(async_client):
     response = await async_client.put("/me/password", json={"new_password": "notvalid"}) # no auth header
     assert response.status_code == 401  
+
+@pytest.mark.asyncio
+async def test_update_password(async_client, verified_user, verified_user_token):
+    headers = {"Authorization": f"Bearer {verified_user_token}"}
+    password = {"new_password": "idespisechickens"}
+    response = await async_client.put("/me/password", json=password, headers=headers)
+    assert response.status_code == 204
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
