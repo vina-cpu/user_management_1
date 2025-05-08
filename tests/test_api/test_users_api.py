@@ -53,7 +53,7 @@ async def test_update_user_email_access_allowed(async_client, admin_user, admin_
 
 @pytest.mark.asyncio
 async def test_update_me_access_denied(async_client):
-    updated_data = {"bio": "this shouldn't work"}
+    updated_data = {"bio": "this shouldn't work"} # no auth header
     response = await async_client.put("/users/me", json=updated_data)
     assert response.status_code == 401
 
@@ -72,7 +72,6 @@ async def test_update_me_everything(async_client, verified_user, verified_user_t
         "github_profile_url": "https://github.com/chimkinnuggets"
     }
     # Send a POST request to create a user
-    print("sending auth header")
     response = await async_client.put("/users/me", json=user_data, headers=headers)
     assert response.status_code == 200
     assert response.json()["email"] == user_data["email"]  
@@ -83,6 +82,11 @@ async def test_update_me_everything(async_client, verified_user, verified_user_t
     assert response.json()["profile_picture_url"] == user_data["profile_picture_url"]
     assert response.json()["linkedin_profile_url"] == user_data["linkedin_profile_url"]
     assert response.json()["github_profile_url"] == user_data["github_profile_url"]
+
+@pytest.mark.asyncio
+async def test_update_password_access_denied(async_client):
+    response = await async_client.put("/me/password", json={"new_password": "notvalid"}) # no auth header
+    assert response.status_code == 401  
 
 @pytest.mark.asyncio
 async def test_delete_user(async_client, admin_user, admin_token):
@@ -175,6 +179,7 @@ async def test_login_locked_user(async_client, locked_user):
     response = await async_client.post("/login/", data=urlencode(form_data), headers={"Content-Type": "application/x-www-form-urlencoded"})
     assert response.status_code == 400
     assert "Account locked due to too many failed login attempts." in response.json().get("detail", "")
+    
 @pytest.mark.asyncio
 async def test_delete_user_does_not_exist(async_client, admin_token):
     non_existent_user_id = "00000000-0000-0000-0000-000000000000"  # Valid UUID format
