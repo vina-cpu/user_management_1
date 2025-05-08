@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role, get_current_user_update_me
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
-from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, UserSelfUpdate
+from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, UserSelfUpdate, UserPasswordUpdate
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
@@ -108,6 +108,14 @@ async def update_me(self_update: UserSelfUpdate, request: Request, db: AsyncSess
         links=create_user_links(updated_user.id, request)
     )
     
+@router.put("/me/password", status_code=status.HTTP_204_NO_CONTENT, tags=["User Settings (Requires Login)"])
+async def update_my_password(user_data: UserPasswordUpdate, session: AsyncSession = Depends(get_db), current_user = Depends(get_current_user_update_me)):
+    updated_password = await UserService.reset_password(session, user_id=current_user.id, new_password=user_data.new_password)
+    if not updated_password:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Unable to reset password; cannot find user")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    
+
 @router.put("/users/{user_id}", response_model=UserResponse, name="update_user", tags=["User Management Requires (Admin or Manager Roles)"])
 async def update_user(user_id: UUID, user_update: UserUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
     """

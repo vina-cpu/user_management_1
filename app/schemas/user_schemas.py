@@ -73,6 +73,9 @@ class UserSelfUpdate(BaseModel): # similar to UserUpdate, but instead of using a
     class Config:
         extra = "forbid"
 
+class UserPasswordUpdate(BaseModel):
+    new_password: str = Field(..., example="Secure*1234")
+
 class UserResponse(UserBase):
     id: uuid.UUID = Field(..., example=uuid.uuid4())
     email: EmailStr = Field(..., example="john.doe@example.com")
