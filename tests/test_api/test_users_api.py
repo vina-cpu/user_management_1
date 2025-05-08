@@ -81,7 +81,29 @@ async def test_update_me_everything(async_client, verified_user, verified_user_t
     assert response.json()["bio"] == user_data["bio"]
     assert response.json()["profile_picture_url"] == user_data["profile_picture_url"]
     assert response.json()["linkedin_profile_url"] == user_data["linkedin_profile_url"]
-    assert response.json()["github_profile_url"] == user_data["github_profile_url"]      
+    assert response.json()["github_profile_url"] == user_data["github_profile_url"]     
+
+@pytest.mark.asyncio
+async def test_update_me_role_invalid(async_client, verified_user, verified_user_token):
+    headers = {"Authorization": f"Bearer {verified_user_token}"}
+    orig_role = verified_user.role
+    user_data = {
+        "bio": "muahaha i am now ceo",
+        "role": "ADMIN"
+    }
+    response = await async_client.put("/users/me", json=user_data, headers=headers)
+    assert response.status_code == 422
+
+@pytest.mark.asyncio
+async def test_update_me_password_invalid(async_client, verified_user, verified_user_token, db_session):
+    headers = {"Authorization": f"Bearer {verified_user_token}"}
+    password = verified_user.hashed_password
+    user_data = {
+        "new_password": "imsupersmart",
+        "bio": "i have a very smooth brain"
+    }
+    response = await async_client.put("/users/me", json=user_data, headers=headers)
+    assert response.status_code == 422
 
 @pytest.mark.asyncio
 async def test_update_password_access_denied(async_client):
