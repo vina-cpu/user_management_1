@@ -17,11 +17,10 @@ Key Highlights:
 - Implements HATEOAS by generating dynamic links for user-related actions, enhancing API discoverability.
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
-
 from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Response, status, Request
+from fastapi import APIRouter, Depends, HTTPException, Response, status, Request, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role, get_current_user_update_me
@@ -229,8 +228,8 @@ async def list_users(
     )
 
 @router.put("/users/{user_id}/professional", response_model=ProfessionalStatusResponse, name="update_user_professional_status", tags=["User Management Requires (Admin or Manager Roles)"])
-async def update_user_professional_status(user_id: UUID, user_data: ProfessionalStatusUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
-    updated_status = await UserService.update_professional_status(session=db, user_id=user_id, is_professional=user_data.is_professional)
+async def update_user_professional_status(user_id: UUID, user_data: ProfessionalStatusUpdate, request: Request, session: AsyncSession = Depends(get_db), email_service: EmailService = Depends(get_email_service), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+    updated_status = await UserService.update_professional_status(session, user_id, email_service, user_data.is_professional)
     if not updated_status:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return ProfessionalStatusResponse.model_construct(

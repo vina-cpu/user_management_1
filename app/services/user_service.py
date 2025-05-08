@@ -108,15 +108,18 @@ class UserService:
             return None
     
     @classmethod
-    async def update_professional_status(cls, session: AsyncSession, user_id: UUID, is_professional: Optional[bool] = None) -> Optional[User]:
+    async def update_professional_status(cls, session: AsyncSession, user_id: UUID, email_service: EmailService, is_professional: Optional[bool] = None) -> Optional[User]:
         user = await cls.get_by_id(session, user_id)
         if not user:
             return None
+        previous_status = user.is_professional
         if is_professional is not None:
             user.is_professional = is_professional
             user.professional_status_updated_at = datetime.now(timezone.utc)
         session.add(user)
         await session.commit()
+        if not previous_status and user.is_professional:
+            await email_service.send_professional_status_email(user)
         return user
 
     @classmethod
