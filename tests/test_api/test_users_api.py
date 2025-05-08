@@ -147,7 +147,7 @@ async def test_create_user_invalid_email(async_client):
     assert response.status_code == 422
     
 @pytest.mark.asyncio
-async def test_update_user_professional_status(async_client, admin_user, admin_token, verified_user, db_session):
+async def test_update_user_professional_status(async_client, admin_token, verified_user, db_session):
     await db_session.refresh(verified_user)
     assert verified_user.is_professional is False
     headers = {"Authorization": f"Bearer {admin_token}"}
@@ -156,6 +156,23 @@ async def test_update_user_professional_status(async_client, admin_user, admin_t
     assert response.status_code == 200
     assert response.json()["is_professional"] is True
     assert response.json()["professional_status_updated_at"] is not None 
+    
+@pytest.mark.asyncio
+async def test_update_user_professional_status_forbidden(async_client, verified_user_token, verified_user, db_session):
+    await db_session.refresh(verified_user)
+    assert verified_user.is_professional is False
+    headers = {"Authorization": f"Bearer {verified_user_token}"}
+    user_data = {"is_professional": True}
+    response = await async_client.put(f"/users/{verified_user.id}/professional", json=user_data, headers=headers)
+    assert response.status_code == 403
+
+@pytest.mark.asyncio
+async def test_update_user_professional_status_not_found(async_client, manager_token):
+    non_existent_user_id = "00000000-0000-0000-0000-000000000000" 
+    headers = {"Authorization": f"Bearer {manager_token}"}
+    user_data = {"is_professional": True}
+    response = await async_client.put(f"/users/{non_existent_user_id}/professional", json=user_data, headers=headers)
+    assert response.status_code == 404
 
 import pytest
 from app.services.jwt_service import decode_token
