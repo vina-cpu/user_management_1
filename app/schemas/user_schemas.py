@@ -103,3 +103,20 @@ class UserListResponse(BaseModel):
     total: int = Field(..., example=100)
     page: int = Field(..., example=1)
     size: int = Field(..., example=10)
+
+class ProfessionalStatusUpdate(BaseModel):
+    is_professional: Optional[bool] = Field(None, example=True)
+    class Config:
+        extra = "forbid"
+
+class ProfessionalStatusResponse(BaseModel):
+    id: uuid.UUID = Field(..., example=uuid.uuid4())
+    email: EmailStr = Field(..., example="john.doe@example.com")
+    nickname: Optional[str] = Field(None, min_length=3, pattern=r'^[\w-]+$', example=generate_nickname())
+    is_professional: Optional[bool] = Field(default=False, example=True)
+    professional_status_updated_at: datetime = Field(...)
+    role: Optional[str] = Field(None, example="AUTHENTICATED")
+    
+    class Config:
+        from_attributes = True
+    

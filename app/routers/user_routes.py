@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role, get_current_user_update_me
 from app.schemas.pagination_schema import EnhancedPagination
 from app.schemas.token_schema import TokenResponse
-from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, UserSelfUpdate, UserPasswordUpdate
+from app.schemas.user_schemas import LoginRequest, UserBase, UserCreate, UserListResponse, UserResponse, UserUpdate, UserSelfUpdate, UserPasswordUpdate, ProfessionalStatusUpdate, ProfessionalStatusResponse
 from app.services.user_service import UserService
 from app.services.jwt_service import create_access_token
 from app.utils.link_generation import create_user_links, generate_pagination_links
@@ -186,7 +186,6 @@ async def create_user(user: UserCreate, request: Request, db: AsyncSession = Dep
     if not created_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to create user")
     
-    
     return UserResponse.model_construct(
         id=created_user.id,
         bio=created_user.bio,
@@ -227,6 +226,21 @@ async def list_users(
         page=skip // limit + 1,
         size=len(user_responses),
         links=pagination_links  # Ensure you have appropriate logic to create these links
+    )
+
+@router.put("/users/{user_id}/professional", response_model=ProfessionalStatusResponse, name="update_user_professional_status", tags=["User Management Requires (Admin or Manager Roles)"])
+async def update_user_professional_status(user_id: UUID, user_data: ProfessionalStatusUpdate, request: Request, db: AsyncSession = Depends(get_db), token: str = Depends(oauth2_scheme), current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))):
+    updated_status = await UserService.update_professional_status(session=db, user_id=user_id, is_professional=user_data.is_professional)
+    if not updated_status:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    return ProfessionalStatusResponse.model_construct(
+        id=updated_status.id,
+        email=updated_status.email,
+        nickname=updated_status.nickname,
+        is_professional=updated_status.is_professional,
+        professional_status_updated_at=updated_status.professional_status_updated_at,
+        role=updated_status.role,
+        links=create_user_links(updated_status.id, request)
     )
 
 @router.post("/register/", response_model=UserResponse, tags=["Login and Registration"])

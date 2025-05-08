@@ -106,6 +106,18 @@ class UserService:
         except Exception as e:  # Broad exception handling for debugging
             logger.error(f"Error during user update: {e}")
             return None
+    
+    @classmethod
+    async def update_professional_status(cls, session: AsyncSession, user_id: UUID, is_professional: Optional[bool] = None) -> Optional[User]:
+        user = await cls.get_by_id(session, user_id)
+        if not user:
+            return None
+        if is_professional is not None:
+            user.is_professional = is_professional
+            user.professional_status_updated_at = datetime.now(timezone.utc)
+        session.add(user)
+        await session.commit()
+        return user
 
     @classmethod
     async def delete(cls, session: AsyncSession, user_id: UUID) -> bool:
