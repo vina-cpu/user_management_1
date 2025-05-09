@@ -50,7 +50,7 @@ jobs:
       - name: Run tests with Pytest
         env:
           DATABASE_URL: postgresql+asyncpg://user:password@localhost:5432/myappdb  # Configure the DATABASE_URL environment variable for tests
-        run: pytest --ignore=tests/test_api/test_users_api.py::test_update_user_professional_status # works on local b/c it's actually going through and testing the SMTP
+        run: pytest --deselect=tests/test_api/test_users_api.py::test_update_user_professional_status # works on local b/c it's actually going through and testing the SMTP
 
   build-and-push-docker:
     needs: test
