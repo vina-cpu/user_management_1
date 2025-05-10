@@ -17,11 +17,13 @@ Key Highlights:
 - Implements HATEOAS by generating dynamic links for user-related actions, enhancing API discoverability.
 - Utilizes OAuth2PasswordBearer for securing API endpoints, requiring valid access tokens for operations.
 """
+import os
 from builtins import dict, int, len, str
 from datetime import timedelta
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status, Request, BackgroundTasks
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.dependencies import get_current_user, get_db, get_email_service, require_role, get_current_user_update_me
 from app.schemas.pagination_schema import EnhancedPagination
@@ -295,3 +297,13 @@ async def verify_email(user_id: UUID, token: str, db: AsyncSession = Depends(get
     if await UserService.verify_email_with_token(db, user_id, token):
         return {"message": "Email verified successfully"}
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired verification token")
+
+BASE_DIR = os.path.dirname(__file__)
+STATIC_DIR = os.path.abspath(os.path.join(BASE_DIR, "..", "static"))
+
+@router.get("/users/me/badge", name="professional_badge", response_class=FileResponse, tags=["See My Professional Badge"])
+async def professional_badge(session: AsyncSession = Depends(get_db), current_user = Depends(get_current_user_update_me)):
+    if not current_user.is_professional:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, detail="Badge not available")
+    image_path = os.path.join(STATIC_DIR, "professional_badge.jpg")
+    return FileResponse(path=image_path, media_type="image/jpeg")
