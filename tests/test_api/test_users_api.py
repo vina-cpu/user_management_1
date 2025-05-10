@@ -174,6 +174,12 @@ async def test_update_user_professional_status_not_found(async_client, manager_t
     response = await async_client.put(f"/users/{non_existent_user_id}/professional", json=user_data, headers=headers)
     assert response.status_code == 404
 
+@pytest.mark.asyncio
+async def test_professional_badge_not_found(async_client, verified_user_token):
+    headers = {"Authorization": f"Bearer {verified_user_token}"}
+    response = await async_client.get(f"/users/me/badge", headers=headers)
+    assert response.status_code == 404
+
 import pytest
 from app.services.jwt_service import decode_token
 from urllib.parse import urlencode
